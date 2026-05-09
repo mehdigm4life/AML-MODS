@@ -9,21 +9,19 @@ on:
 jobs:
   unzip-and-commit:
     runs-on: ubuntu-latest
-    # تأكد من أن التنسيق (المسافات) مطابق تماماً لما يلي
-    permissions:
-      contents: write
-      actions: write
-      
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # استخدام التوكن الافتراضي لضمان وجود الصلاحيات
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # نستخدم التوكن الجديد الذي أنشأته هنا
+          token: ${{ secrets.MY_GITHUB_TOKEN }}
 
       - name: Unzip SAMP-AML-Mod.zip
         run: |
           unzip -o SAMP-AML-Mod.zip -d .
+          # اختياري: إذا كنت لا تريد تحديث ملفات الـ workflow من داخل الـ zip لمنع الأخطاء مستقبلاً
+          # rm -rf .github/workflows/build.yml 
 
       - name: Commit and Push changes
         uses: stefanzweifel/git-auto-commit-action@v5

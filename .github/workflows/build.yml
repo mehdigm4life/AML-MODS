@@ -1,0 +1,96 @@
+name: Build SAMP AML Mod
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Android NDK
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r25c
+          add-to-path: true
+
+      - name: Verify NDK installation
+        run: |
+          echo "NDK Path: ${{ steps.setup-ndk.outputs.ndk-path }}"
+          ls -la ${{ steps.setup-ndk.outputs.ndk-path }}
+          ${{ steps.setup-ndk.outputs.ndk-path }}/ndk-build --version
+
+      - name: Build with ndk-build
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+        run: |
+          mkdir -p obj libs
+          ${ANDROID_NDK_HOME}/ndk-build \
+            NDK_PROJECT_PATH=. \
+            APP_BUILD_SCRIPT=./Android.mk \
+            NDK_APPLICATION_MK=./Application.mk \
+            -j$(nproc)
+
+      - name: List build artifacts
+        run: |
+          echo "=== Built libraries ==="
+          find libs -name "*.so" -exec ls -lh {} \;
+
+      - name: Rename output files
+        run: |
+          mkdir -p output
+          if [ -f libs/armeabi-v7a/libSAMPAMLMenu.so ]; then
+            cp libs/armeabi-v7a/libSAMPAMLMenu.so output/SAMPAMLMenu_armv7a.so
+          fi
+          if [ -f libs/arm64-v8a/libSAMPAMLMenu.so ]; then
+            cp libs/arm64-v8a/libSAMPAMLMenu.so output/SAMPAMLMenu_arm64v8a.so
+          fi
+          ls -lh output/
+
+      - name: Upload ARMv7 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SAMPAMLMenu-armeabi-v7a
+          path: libs/armeabi-v7a/*.so
+          if-no-files-found: error
+
+      - name: Upload ARM64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SAMPAMLMenu-arm64-v8a
+          path: libs/arm64-v8a/*.so
+          if-no-files-found: error
+
+      - name: Upload combined release
+        uses: actions/upload-artifact@v4
+        with:
+          name: SAMPAMLMenu-Release
+          path: output/*.so
+          if-no-files-found: warn
+
+      - name: Create GitHub Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            output/SAMPAMLMenu_armv7a.so
+            output/SAMPAMLMenu_arm64v8a.so
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

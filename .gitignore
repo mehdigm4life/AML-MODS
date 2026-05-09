@@ -1,0 +1,10 @@
+obj/
+libs/
+output/
+*.o
+*.so
+.idea/
+.vscode/
+*.swp
+.DS_Store
+local.properties

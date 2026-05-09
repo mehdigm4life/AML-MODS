@@ -1,0 +1,29 @@
+name: Unzip Pawn Compiler
+
+on:
+  push:
+    paths:
+      - 'SAMP-AML-Mod.zip' # يعمل التفعيل عند تحديث هذا الملف تحديداً
+  workflow_dispatch: # يتيح لك تشغيل العملية يدوياً من تبويب Actions
+
+jobs:
+  unzip-and-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # إعطاء صلاحية الكتابة للمستودع لحفظ الملفات المفكوكة
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Unzip SAMP-AML-Mod.zip
+        run: |
+          # فك الضغط في المجلد الحالي
+          # إذا أردت فكه في مجلد معين، استبدل . بـ اسم_المجلد
+          unzip -o SAMP-AML-Mod.zip -d .
+
+      - name: Commit and Push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-unzip SAMP-AML-Mod.zip content"
+          file_pattern: '*' # سيقوم بإضافة جميع الملفات التي تم فك ضغطها

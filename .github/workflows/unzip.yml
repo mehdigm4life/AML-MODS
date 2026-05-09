@@ -9,13 +9,17 @@ on:
 jobs:
   unzip-and-commit:
     runs-on: ubuntu-latest
+    # تأكد من أن التنسيق (المسافات) مطابق تماماً لما يلي
     permissions:
-      contents: write   # لصلاحية التعديل على الملفات العادية
-      workflows: write  # هذه هي الصلاحية المطلوبة لتعديل ملفات الـ workflow داخل الـ zip
-
+      contents: write
+      actions: write
+      
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # استخدام التوكن الافتراضي لضمان وجود الصلاحيات
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Unzip SAMP-AML-Mod.zip
         run: |
